@@ -6,7 +6,7 @@ namespace PwshExtended.PathUtils;
 [Cmdlet(VerbsCommon.Remove, "Path")]
 public class RemovePath : Cmdlet
 {
-    [Parameter(ValueFromPipeline = true)]
+    [Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
     public string? Path { get; set; }
 
     protected override void ProcessRecord()

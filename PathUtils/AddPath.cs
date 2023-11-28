@@ -6,7 +6,7 @@ namespace PwshExtended.PathUtils;
 [Cmdlet(VerbsCommon.Add, "Path")]
 public class AddPath : Cmdlet
 {
-    [Parameter(ValueFromPipeline = true)]
+    [Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
     public string? Path { get; set; }
     
     
@@ -17,13 +17,14 @@ public class AddPath : Cmdlet
         if (!File.Exists(pathToXml))
         {
             WriteVerbose("Add-Path: Creating ExtraPaths.xml...");
+            Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.config/powershell/");
+            File.Create(pathToXml).Dispose();
             xmlData.AppendChild(xmlData.CreateXmlDeclaration("1.0", "UTF-8", "yes"));
             xmlData.AppendChild(xmlData.CreateElement("root"));
             xmlData.SelectSingleNode("root")?.AppendChild(xmlData.CreateElement("ExtraPaths"));
             xmlData.Save(pathToXml);
         }
         xmlData.Load(pathToXml);
-
         if (Environment.GetEnvironmentVariable("PATH")!.Split(':').Contains(Path))
         {
             var errorRecord = new ErrorRecord(
@@ -44,6 +45,8 @@ public class AddPath : Cmdlet
         }
         
         var pathToBeAdded = xmlData.CreateElement("Path");
+        if (Path[^1] != '/')
+            Path = Path + '/';
         pathToBeAdded.InnerText = Path;
         xmlData.SelectSingleNode("root/ExtraPaths")?.AppendChild(pathToBeAdded);
         xmlData.Save(pathToXml);
