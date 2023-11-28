@@ -6,16 +6,24 @@ namespace PwshExtended.PathUtils;
 [Cmdlet(VerbsData.Sync, "Path")]
 public class SyncPath : Cmdlet
 {
-    [Parameter(ValueFromPipeline = true)]
-    public string? Path { get; set; }
-
-    protected override void ProcessRecord() => RefreshPathFunc();
+    protected override void ProcessRecord()
+    {
+        var pathToXml = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/.config/powershell/ExtraPaths.xml";
+        if (!File.Exists(pathToXml))
+        {
+            ErrorRecord errorRecord = new ErrorRecord(
+                new Exception("ExtraPaths.xml does not exist"),
+                null,
+                ErrorCategory.ResourceUnavailable,
+                this);
+            ThrowTerminatingError(errorRecord);
+        }
+        RefreshPathFunc();
+    }
     
     public static void RefreshPathFunc()
     {
         var pathToXml = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/.config/powershell/ExtraPaths.xml";
-        if (!File.Exists(pathToXml))
-            throw new Exception("Error! ExtraPaths.xml does not exist");
         var xmlData = new XmlDocument();
         xmlData.Load(pathToXml);
         foreach (XmlElement existingPath in xmlData.SelectNodes("root/ExtraPaths/Path")!)

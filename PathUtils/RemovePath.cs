@@ -12,9 +12,16 @@ public class RemovePath : Cmdlet
     protected override void ProcessRecord()
     {
         var pathToXml = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+"/.config/powershell/ExtraPaths.xml";
-        var xmlData = new XmlDocument();
         if (!File.Exists(pathToXml))
-            throw new Exception("Error! There are no extra paths to remove");
+        {
+            ErrorRecord errorRecord = new ErrorRecord(
+                new Exception("ExtraPaths.xml does not exist"), 
+                null, 
+                ErrorCategory.ResourceUnavailable, 
+                this);
+            ThrowTerminatingError(errorRecord);
+        }
+        var xmlData = new XmlDocument();
         xmlData.Load(pathToXml);
         foreach (XmlElement existingPath in xmlData.SelectNodes("root/ExtraPaths/Path")!)
             if (existingPath.InnerText.Equals(Path))
@@ -24,15 +31,7 @@ public class RemovePath : Cmdlet
                 break;
             }
 
-        string newPath = "";
-        foreach (var pathSection in Environment.GetEnvironmentVariable("PATH")?.Split(":")!)
-            if (pathSection != Path && pathSection.Length > 0)
-                if (pathSection[^1].Equals(':'))
-                    newPath += pathSection;
-                else
-                    newPath += pathSection + ":";
-        
-        Environment.SetEnvironmentVariable("PATH", newPath);
-        
+        SyncPath.RefreshPathFunc();
+
     }
 }

@@ -16,7 +16,7 @@ public class AddPath : Cmdlet
         var xmlData = new XmlDocument();
         if (!File.Exists(pathToXml))
         {
-            Console.WriteLine("Add-Path: Creating ExtraPaths.xml...");
+            WriteVerbose("Add-Path: Creating ExtraPaths.xml...");
             xmlData.AppendChild(xmlData.CreateXmlDeclaration("1.0", "UTF-8", "yes"));
             xmlData.AppendChild(xmlData.CreateElement("root"));
             xmlData.SelectSingleNode("root")?.AppendChild(xmlData.CreateElement("ExtraPaths"));
@@ -25,14 +25,28 @@ public class AddPath : Cmdlet
         xmlData.Load(pathToXml);
 
         if (Environment.GetEnvironmentVariable("PATH")!.Split(':').Contains(Path))
-            throw new Exception("Error! " + Path + " is already in path!");
+        {
+            var errorRecord = new ErrorRecord(
+                new Exception(Path + "is already in $PATH"),
+                null,
+                ErrorCategory.ResourceExists,
+                this);
+            ThrowTerminatingError(errorRecord);
+        }
         if (!File.Exists(Path) && !Directory.Exists(Path))
-            throw new Exception("Error! " + Path + " does not exist!");
+        {
+            var errorRecord = new ErrorRecord(
+                new Exception(Path + "does not exist"),
+                null,
+                ErrorCategory.ResourceUnavailable,
+                this);
+            ThrowTerminatingError(errorRecord);
+        }
         
         var pathToBeAdded = xmlData.CreateElement("Path");
         pathToBeAdded.InnerText = Path;
         xmlData.SelectSingleNode("root/ExtraPaths")?.AppendChild(pathToBeAdded);
-        SyncPath.RefreshPathFunc();
         xmlData.Save(pathToXml);
+        SyncPath.RefreshPathFunc();
     }
 }
